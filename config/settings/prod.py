@@ -15,3 +15,6 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 # Trust the Mikrus reverse proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Required in Django 4+ — allow CSRF for our wykr.es subdomain
+CSRF_TRUSTED_ORIGINS = ['https://frog02-21044.wykr.es']
