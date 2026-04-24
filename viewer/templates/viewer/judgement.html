@@ -1,0 +1,95 @@
+{% extends "viewer/base.html" %}
+{% block title %}Judgement — Damian's Trade Ideas{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-baseline justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-white">Judgement</h1>
+    <p class="text-slate-400 text-sm mt-1">Final curated picks</p>
+  </div>
+  {% if judgement %}
+  <span class="text-slate-500 text-sm">{{ judgement.date_display }}</span>
+  {% endif %}
+</div>
+
+{% if not judgement %}
+<div class="rounded-xl border border-slate-700 bg-slate-900 p-8 text-slate-400 text-sm">
+  No judgement uploaded yet. Use <strong class="text-slate-300">Upload Files</strong> in the sidebar.
+</div>
+
+{% else %}
+
+<!-- Selected Picks -->
+<h2 class="text-base font-semibold text-slate-300 uppercase tracking-wide mb-4">Selected Picks</h2>
+<div class="grid gap-4 mb-10">
+  {% for pick in judgement.picks %}
+  <div class="rounded-xl border border-slate-700 bg-slate-900 p-5">
+
+    <!-- Header row -->
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+      <div class="flex items-center gap-3">
+        <span class="text-xl font-bold text-white">{{ pick.ticker }}</span>
+        <!-- Direction badge -->
+        {% if pick.direction == 'long' %}
+        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">Long</span>
+        {% else %}
+        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">Short</span>
+        {% endif %}
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Confidence -->
+        <span class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide
+          {% if pick.confidence >= 4 %}bg-emerald-900 text-emerald-300
+          {% elif pick.confidence == 3 %}bg-amber-900 text-amber-300
+          {% else %}bg-red-900 text-red-300{% endif %}">
+          Confidence {{ pick.confidence }}/5
+        </span>
+        <!-- Session scope -->
+        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 uppercase tracking-wide">
+          {{ pick.scope_sessions }} sessions
+        </span>
+      </div>
+    </div>
+
+    <!-- Price row -->
+    <div class="flex flex-wrap gap-6 mb-4 text-sm">
+      <div>
+        <p class="text-slate-500 text-xs mb-0.5">Entry Price</p>
+        <p class="text-white font-mono font-medium">${{ pick.price_at_report }}</p>
+      </div>
+      <div>
+        <p class="text-slate-500 text-xs mb-0.5">Target</p>
+        <p class="text-white font-mono font-medium">${{ pick.target_price }}</p>
+      </div>
+      <div>
+        <p class="text-slate-500 text-xs mb-0.5">Upside</p>
+        <p class="font-mono font-medium
+          {% if pick.upside_pct >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+          +{{ pick.upside_pct }}%
+        </p>
+      </div>
+    </div>
+
+    <!-- Reasoning -->
+    <p class="text-sm text-slate-300 leading-relaxed">{{ pick.reasoning }}</p>
+
+  </div><!-- end pick card -->
+  {% endfor %}
+</div>
+
+<!-- Excluded Candidates -->
+{% if judgement.excluded_candidates %}
+<h2 class="text-base font-semibold text-slate-300 uppercase tracking-wide mb-4">Excluded Candidates</h2>
+<div class="rounded-xl border border-slate-700 bg-slate-900 divide-y divide-slate-700">
+  {% for excl in judgement.excluded_candidates %}
+  <div class="px-5 py-3 flex items-start gap-4">
+    <span class="text-sm font-bold text-slate-400 w-14 shrink-0">{{ excl.ticker }}</span>
+    <p class="text-sm text-slate-500 leading-relaxed">{{ excl.reason }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

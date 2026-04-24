@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Damian's Trade Ideas{% endblock %}</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark:  '#0f172a',
+              panel: '#1e293b',
+              border:'#334155',
+              text:  '#94a3b8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js via CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* Smooth scrollbar for the main content area */
+    [data-main] { scroll-behavior: smooth; }
+    /* Hide Alpine.js elements before the JS initialises — prevents content flash */
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="fixed top-0 left-0 right-0 z-30 h-14 bg-slate-900 border-b border-slate-700
+                 flex items-center px-6 shadow-md">
+    <span class="text-lg font-semibold tracking-wide text-white">
+      Damian's Trade Ideas
+    </span>
+  </header>
+
+  <!-- ===== BODY (sidebar + content) ===== -->
+  <div class="flex pt-14 min-h-screen">
+
+    <!-- ===== LEFT SIDEBAR ===== -->
+    <nav class="fixed top-14 left-0 bottom-0 w-48 bg-slate-900 border-r border-slate-700
+                flex flex-col pt-6 px-3 z-20">
+
+      {% with request.resolver_match.url_name as active %}
+
+      <a href="{% url 'report' %}"
+         class="nav-link mb-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if active == 'report' %}bg-slate-700 text-white{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+        <!-- Bar-chart icon -->
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 3v18h18M7 16v-5m4 5V8m4 8v-2"/>
+        </svg>
+        Report
+      </a>
+
+      <a href="{% url 'review' %}"
+         class="nav-link mb-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if active == 'review' %}bg-slate-700 text-white{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+        <!-- Clipboard icon -->
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+                   M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Review
+      </a>
+
+      <a href="{% url 'judgement' %}"
+         class="nav-link mb-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if active == 'judgement' %}bg-slate-700 text-white{% else %}text-slate-400 hover:bg-slate-800 hover:text-white{% endif %}">
+        <!-- Scale / gavel icon -->
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 6l9-3 9 3M3 6v12l9 3m0-15v15m9-15v12l-9 3"/>
+        </svg>
+        Judgement
+      </a>
+
+      {% endwith %}
+
+      <!-- Upload button at bottom of sidebar -->
+      <div class="mt-auto pb-4">
+        <a href="{% url 'upload' %}"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                  text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-700 hover:border-slate-500">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+               viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2
+                     M12 12V4m0 0L8 8m4-4l4 4"/>
+          </svg>
+          Upload Files
+        </a>
+      </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main data-main class="ml-48 flex-1 p-8 min-w-0">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div><!-- end flex body -->
+
+  <script src="{% static 'viewer/app.js' %}"></script>
+</body>
+</html>

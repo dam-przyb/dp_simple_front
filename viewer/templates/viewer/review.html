@@ -1,0 +1,76 @@
+{% extends "viewer/base.html" %}
+{% block title %}Review — Damian's Trade Ideas{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-baseline justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-white">Review</h1>
+    <p class="text-slate-400 text-sm mt-1">Peer review of AI team picks</p>
+  </div>
+  {% if review %}
+  <span class="text-slate-500 text-sm">{{ review.date_display }}</span>
+  {% endif %}
+</div>
+
+{% if not review %}
+<div class="rounded-xl border border-slate-700 bg-slate-900 p-8 text-slate-400 text-sm">
+  No review uploaded yet. Use <strong class="text-slate-300">Upload Files</strong> in the sidebar.
+</div>
+
+{% else %}
+{% for team_block in review.teams %}
+<section class="mb-10">
+
+  <!-- Team heading -->
+  <h2 class="text-lg font-semibold text-white mb-4">{{ team_block.team|capfirst }}</h2>
+
+  <div class="grid gap-4">
+    {% for pick in team_block.team_review %}
+    <div class="rounded-xl border border-slate-700 bg-slate-900 p-5">
+
+      <!-- Header row -->
+      <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+
+        <!-- Left: ticker + name -->
+        <div class="flex items-center gap-3">
+          <span class="text-xl font-bold text-white">{{ pick.ticker }}</span>
+          <span class="text-slate-400 text-sm">{{ pick.stock_name }}</span>
+        </div>
+
+        <!-- Right: badges -->
+        <div class="flex items-center gap-2">
+          <!-- Side badge -->
+          {% if pick.side == 'long' %}
+          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">Long</span>
+          {% else %}
+          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">Short</span>
+          {% endif %}
+
+          <!-- Score badge -->
+          <span class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide
+            {% if pick.note >= 8 %}bg-emerald-900 text-emerald-300
+            {% elif pick.note >= 5 %}bg-amber-900 text-amber-300
+            {% else %}bg-red-900 text-red-300{% endif %}">
+            {{ pick.note }}/10
+          </span>
+
+          <!-- Validity badge -->
+          {% if pick.still_valid %}
+          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">Valid</span>
+          {% else %}
+          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">Invalid</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Reasoning -->
+      <p class="text-sm text-slate-300 leading-relaxed">{{ pick.reasoning }}</p>
+
+    </div><!-- end pick card -->
+    {% endfor %}
+  </div>
+
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

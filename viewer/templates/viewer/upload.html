@@ -1,0 +1,125 @@
+{% extends "viewer/base.html" %}
+{% block title %}Upload Files — Damian's Trade Ideas{% endblock %}
+
+{% block content %}
+<div x-data="uploader()" class="max-w-2xl">
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white">Upload Files</h1>
+    <p class="text-slate-400 text-sm mt-1">
+      Drop multiple JSON files at once — reports, reviews, and judgements are detected automatically.
+    </p>
+  </div>
+
+  <!-- Drop zone -->
+  <div
+    @dragover.prevent="dragging = true"
+    @dragleave.prevent="dragging = false"
+    @drop.prevent="onDrop($event)"
+    @click="$refs.fileInput.click()"
+    :class="dragging ? 'border-slate-400 bg-slate-800' : 'border-slate-600 bg-slate-900 hover:border-slate-500'"
+    class="border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer select-none">
+
+    <svg class="w-10 h-10 mx-auto mb-3 text-slate-500" fill="none" stroke="currentColor"
+         stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775
+               5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.343 10.95"/>
+    </svg>
+    <p class="text-slate-300 font-medium">Drop JSON files here</p>
+    <p class="text-slate-500 text-sm mt-1">or click to browse</p>
+
+    <input type="file" multiple accept=".json" x-ref="fileInput"
+           class="hidden" @change="onFileSelect($event)">
+  </div>
+
+  <!-- File list -->
+  <template x-if="files.length > 0">
+    <div class="mt-4 space-y-2">
+
+      <template x-for="(f, index) in files" :key="index">
+        <div class="flex items-center justify-between px-4 py-3 rounded-lg bg-slate-900 border border-slate-700 gap-3">
+
+          <!-- Left: status icon + filename -->
+          <div class="flex items-center gap-3 min-w-0">
+            <!-- pending -->
+            <span x-show="f.status === 'pending'"
+                  class="w-4 h-4 rounded-full border-2 border-slate-600 shrink-0"></span>
+            <!-- uploading spinner -->
+            <span x-show="f.status === 'uploading'"
+                  class="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin shrink-0"></span>
+            <!-- success tick -->
+            <span x-show="f.status === 'ok'" class="text-emerald-400 shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+              </svg>
+            </span>
+            <!-- error cross -->
+            <span x-show="f.status === 'error'" class="text-red-400 shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </span>
+
+            <span class="text-sm text-slate-300 truncate" x-text="f.name"></span>
+          </div>
+
+          <!-- Right: type label or error -->
+          <div class="shrink-0 text-right">
+            <span x-show="f.type && !f.error"
+                  class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 capitalize"
+                  x-text="f.type"></span>
+            <span x-show="f.error"
+                  class="text-xs text-red-400"
+                  x-text="f.error"></span>
+          </div>
+
+        </div>
+      </template>
+
+      <!-- Action buttons -->
+      <div class="pt-2 flex gap-3">
+        <button @click="doUpload()"
+                :disabled="uploading || allDone"
+                class="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium
+                       transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          <span x-text="uploading ? 'Uploading…' : 'Upload'">Upload</span>
+        </button>
+        <button @click="reset()" :disabled="uploading"
+                class="px-5 py-2 rounded-lg text-slate-400 hover:text-white text-sm transition-colors
+                       disabled:opacity-40 disabled:cursor-not-allowed">
+          Clear
+        </button>
+      </div>
+
+    </div>
+  </template>
+
+  <!-- Post-upload navigation -->
+  <template x-if="doneCount > 0">
+    <div class="mt-6 rounded-xl border border-slate-700 bg-slate-900 p-5">
+      <p class="text-sm text-slate-300 mb-3">
+        <span x-text="doneCount"></span> file<span x-show="doneCount !== 1">s</span> uploaded.
+        View updated pages:
+      </p>
+      <div class="flex gap-4">
+        <a href="{% url 'report' %}"
+           class="text-sm text-slate-400 hover:text-white transition-colors">→ Report</a>
+        <a href="{% url 'review' %}"
+           class="text-sm text-slate-400 hover:text-white transition-colors">→ Review</a>
+        <a href="{% url 'judgement' %}"
+           class="text-sm text-slate-400 hover:text-white transition-colors">→ Judgement</a>
+      </div>
+    </div>
+  </template>
+
+  <!-- Accepted formats hint -->
+  <p class="mt-6 text-xs text-slate-600 leading-relaxed">
+    Accepted filename patterns:
+    <span class="font-mono text-slate-500">*_report_*.json</span>,
+    <span class="font-mono text-slate-500">*_reviews*.json</span>,
+    <span class="font-mono text-slate-500">*judgement*.json</span>
+  </p>
+
+</div>
+{% endblock %}
