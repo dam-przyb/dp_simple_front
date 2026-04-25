@@ -112,7 +112,7 @@ git pull
 rc-service tradeviewer restart
 ```
 
-Static files only change if you modify `app.js` or add new static assets:
+If you changed any files under `viewer/static/` (JS, CSS, images), also run `collectstatic` — otherwise Nginx keeps serving the old cached version:
 
 ```bash
 source venv/bin/activate
