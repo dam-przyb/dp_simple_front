@@ -113,6 +113,35 @@
     </div>
   </template>
 
+  <!-- Clean section -->
+  <div x-data="cleaner()" class="mt-10 border-t border-slate-800 pt-8">
+    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Clean data files</h2>
+    <p class="text-xs text-slate-500 mb-5">Permanently deletes all files of the selected type from the server.</p>
+
+    <div class="flex flex-wrap gap-3">
+      <template x-for="cat in ['report', 'review', 'judgement']" :key="cat">
+        <div class="flex flex-col items-start gap-1">
+          <button
+            @click="doClean(cat)"
+            :disabled="busy"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors border
+                   text-red-400 border-red-900 hover:bg-red-950 hover:border-red-700
+                   disabled:opacity-40 disabled:cursor-not-allowed capitalize"
+            x-text="'Clean ' + cat + 's'">
+          </button>
+          <span x-show="result && result.type === cat"
+                x-cloak
+                :class="result.ok ? 'text-emerald-400' : 'text-red-400'"
+                class="text-xs pl-1"
+                x-text="result.ok
+                  ? (result.deleted > 0 ? result.deleted + ' file' + (result.deleted !== 1 ? 's' : '') + ' deleted' : 'Nothing to delete')
+                  : result.error">
+          </span>
+        </div>
+      </template>
+    </div>
+  </div>
+
   <!-- Accepted formats hint -->
   <p class="mt-6 text-xs text-slate-600 leading-relaxed">
     Accepted filename patterns:

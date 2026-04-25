@@ -106,3 +106,33 @@ function uploader() {
     },
   };
 }
+
+function cleaner() {
+  return {
+    busy: false,
+    result: null,   // { ok, deleted, type, error }
+
+    async doClean(type) {
+      const msg = `Delete all ${type} files? This cannot be undone.`;
+      if (!window.confirm(msg)) return;
+
+      this.busy = true;
+      this.result = null;
+
+      try {
+        const body = new URLSearchParams({ type });
+        const response = await fetch('/upload/clean/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrfToken() },
+          body,
+        });
+        const data = await response.json();
+        this.result = data;
+      } catch (err) {
+        this.result = { ok: false, type, error: 'Network error — could not reach the server' };
+      }
+
+      this.busy = false;
+    },
+  };
+}

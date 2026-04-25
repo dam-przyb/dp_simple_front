@@ -20,6 +20,30 @@ def _load_json(path: Path) -> dict | list | None:
         return None
 
 
+def delete_files_by_type(file_type: str, data_dir: Path = None) -> int:
+    """
+    Delete all files of a given type from data_dir.
+    Returns the number of files deleted.
+    """
+    if data_dir is None:
+        data_dir = settings.DATA_DIR
+
+    patterns = {
+        'report':    '*_report_*.json',
+        'review':    '*_reviews*.json',
+        'judgement': '*judgement*.json',
+    }
+    pattern = patterns.get(file_type)
+    if pattern is None:
+        return 0
+
+    count = 0
+    for path in data_dir.glob(pattern):
+        path.unlink(missing_ok=True)
+        count += 1
+    return count
+
+
 def detect_file_type(filename: str) -> str | None:
     """
     Determine the document type from a filename.

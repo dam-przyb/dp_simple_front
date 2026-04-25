@@ -7,7 +7,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
-from .utils import detect_file_type, get_latest_judgement, get_latest_reports, get_latest_review
+from .utils import delete_files_by_type, detect_file_type, get_latest_judgement, get_latest_reports, get_latest_review
 
 
 def index(request):
@@ -96,3 +96,14 @@ def upload(request):
                             'error': f'Could not save file: {exc}', 'type': None})
 
     return JsonResponse({'results': results})
+
+
+@require_http_methods(["POST"])
+def clean_files(request):
+    """Delete all files of a given type from DATA_DIR."""
+    file_type = request.POST.get('type', '')
+    if file_type not in ('report', 'review', 'judgement'):
+        return JsonResponse({'ok': False, 'error': 'Invalid type'}, status=400)
+
+    deleted = delete_files_by_type(file_type)
+    return JsonResponse({'ok': True, 'deleted': deleted, 'type': file_type})
