@@ -131,9 +131,9 @@
           </button>
           <span x-show="result && result.type === cat"
                 x-cloak
-                :class="result.ok ? 'text-emerald-400' : 'text-red-400'"
+                :class="result && result.ok ? 'text-emerald-400' : 'text-red-400'"
                 class="text-xs pl-1"
-                x-text="result.ok
+                x-text="result && result.ok
                   ? (result.deleted > 0 ? result.deleted + ' file' + (result.deleted !== 1 ? 's' : '') + ' deleted' : 'Nothing to delete')
                   : result.error">
           </span>
