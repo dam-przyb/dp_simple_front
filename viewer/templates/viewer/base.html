@@ -111,7 +111,8 @@
 
       {% endwith %}
 
-      <!-- Upload button at bottom of sidebar -->
+      <!-- Upload button at bottom of sidebar — hidden for guest -->
+      {% if remote_user != 'guest' %}
       <div class="mt-auto pb-4">
         <a href="{% url 'upload' %}"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -125,6 +126,7 @@
           Upload Files
         </a>
       </div>
+      {% endif %}
     </nav>
 
     <!-- ===== MAIN CONTENT ===== -->
