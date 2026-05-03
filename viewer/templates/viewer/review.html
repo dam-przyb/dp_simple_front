@@ -1,4 +1,5 @@
 {% extends "viewer/base.html" %}
+{% load viewer_extras %}
 {% block title %}Review — Damian's Trade Ideas{% endblock %}
 
 {% block content %}
@@ -18,59 +19,168 @@
 </div>
 
 {% else %}
-{% for team_block in review.teams %}
-<section class="mb-10">
+<div x-data="reviewFilter({{ review_picks|tojson }})" x-init="init()">
 
-  <!-- Team heading -->
-  <h2 class="text-lg font-semibold text-white mb-4">{{ team_block.team|capfirst }}</h2>
+  <section class="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4 md:p-5 space-y-4">
+    <div class="flex flex-wrap items-end gap-4 justify-between">
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Filters</h2>
+        <p class="text-xs text-slate-500 mt-1">Adjust filters, then click Apply.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button @click="apply()"
+                class="px-3 py-1.5 rounded-md bg-slate-700 text-slate-100 text-sm font-medium hover:bg-slate-600 transition-colors">
+          Apply filters
+        </button>
+        <button x-show="hasActiveFilter"
+                x-cloak
+                @click="reset()"
+                class="px-3 py-1.5 rounded-md border border-slate-600 text-slate-300 text-sm hover:text-white hover:border-slate-500 transition-colors">
+          Reset
+        </button>
+      </div>
+    </div>
 
-  <div class="grid gap-4">
-    {% for pick in team_block.team_review %}
-    <div class="rounded-xl border border-slate-700 bg-slate-900 p-5">
-
-      <!-- Header row -->
-      <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-
-        <!-- Left: ticker + name -->
-        <div class="flex items-center gap-3">
-          <span class="text-xl font-bold text-white">{{ pick.ticker }}</span>
-          <span class="text-slate-400 text-sm">{{ pick.stock_name }}</span>
-        </div>
-
-        <!-- Right: badges -->
-        <div class="flex items-center gap-2">
-          <!-- Side badge -->
-          {% if pick.side == 'long' %}
-          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">Long</span>
-          {% else %}
-          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">Short</span>
-          {% endif %}
-
-          <!-- Score badge -->
-          <span class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide
-            {% if pick.note >= 8 %}bg-emerald-900 text-emerald-300
-            {% elif pick.note >= 5 %}bg-amber-900 text-amber-300
-            {% else %}bg-red-900 text-red-300{% endif %}">
-            {{ pick.note }}/10
-          </span>
-
-          <!-- Validity badge -->
-          {% if pick.still_valid %}
-          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">Valid</span>
-          {% else %}
-          <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">Invalid</span>
-          {% endif %}
+    <div class="grid gap-4 lg:grid-cols-4">
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Teams</p>
+        <div class="flex flex-wrap gap-2">
+          <template x-for="team in allTeams" :key="`team-${team}`">
+            <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+              <input type="checkbox"
+                     class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                     :checked="pendingTeams.includes(team)"
+                     @change="togglePendingTeam(team)">
+              <span x-text="labelForTeam(team)"></span>
+            </label>
+          </template>
         </div>
       </div>
 
-      <!-- Reasoning -->
-      <p class="text-sm text-slate-300 leading-relaxed">{{ pick.reasoning }}</p>
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Direction</p>
+        <div class="flex flex-wrap gap-2">
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   :checked="pendingSides.includes('long')"
+                   @change="togglePendingSide('long')">
+            <span>Long</span>
+          </label>
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   :checked="pendingSides.includes('short')"
+                   @change="togglePendingSide('short')">
+            <span>Short</span>
+          </label>
+        </div>
+      </div>
 
-    </div><!-- end pick card -->
-    {% endfor %}
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Validity</p>
+        <div class="flex flex-wrap gap-2">
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   x-model="pendingShowValid">
+            <span>Valid</span>
+          </label>
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   x-model="pendingShowInvalid">
+            <span>Invalid</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label for="review-query" class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ticker or Name</label>
+        <input id="review-query"
+               type="text"
+               x-model="pendingQuery"
+               placeholder="Search reviews"
+               class="mt-2 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600">
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide mr-1">Score</span>
+      <button @click="setPendingSort('desc')"
+              :class="pendingScoreSort === 'desc' ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-800 text-slate-300 border-slate-700'"
+              class="px-2.5 py-1 rounded-md border text-xs transition-colors">
+        High to Low
+      </button>
+      <button @click="setPendingSort('asc')"
+              :class="pendingScoreSort === 'asc' ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-800 text-slate-300 border-slate-700'"
+              class="px-2.5 py-1 rounded-md border text-xs transition-colors">
+        Low to High
+      </button>
+    </div>
+  </section>
+
+  <template x-for="team in allTeams" :key="`empty-${team}`">
+    <div x-show="filteredPicks(team).length === 0" x-cloak class="hidden"></div>
+  </template>
+
+  {% for team in review_teams %}
+  <section class="mb-10"
+           x-show="activeTeams.includes('{{ team.slug|escapejs }}') && filteredPicks('{{ team.slug|escapejs }}').length > 0"
+           x-cloak>
+
+    <h2 class="text-lg font-semibold text-white mb-4">{{ team.label|capfirst }}</h2>
+
+    <div class="grid gap-4">
+      <template x-for="pick in filteredPicks('{{ team.slug|escapejs }}')" :key="pick.anchor_id">
+        <div :id="pick.anchor_id" class="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors duration-[2000ms]">
+
+          <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xl font-bold text-white" x-text="pick.ticker"></span>
+              <span class="text-slate-400 text-sm" x-text="pick.name"></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span x-show="pick.side === 'long'"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">
+                Long
+              </span>
+              <span x-show="pick.side !== 'long'"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">
+                Short
+              </span>
+
+              <span class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide"
+                    :class="(Number(pick.note) >= 8) ? 'bg-emerald-900 text-emerald-300' : ((Number(pick.note) >= 5) ? 'bg-amber-900 text-amber-300' : 'bg-red-900 text-red-300')"
+                    x-text="`${pick.note}/10`">
+              </span>
+
+              <span x-show="pick.valid"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-900 text-emerald-300 uppercase tracking-wide">
+                Valid
+              </span>
+              <span x-show="!pick.valid"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold bg-red-900 text-red-300 uppercase tracking-wide">
+                Invalid
+              </span>
+            </div>
+          </div>
+
+          <p class="text-sm text-slate-300 leading-relaxed" x-text="pick.reasoning"></p>
+        </div>
+      </template>
+    </div>
+
+  </section>
+  {% endfor %}
+
+  <div x-show="allTeams.every(team => filteredPicks(team).length === 0)"
+       x-cloak
+       class="rounded-xl border border-slate-700 bg-slate-900 p-5 text-sm text-slate-400">
+    No review picks match the currently applied filters.
   </div>
 
-</section>
-{% endfor %}
+</div>
 {% endif %}
 {% endblock %}

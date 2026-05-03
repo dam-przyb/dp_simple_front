@@ -20,6 +20,8 @@ Examples of the Socratic approach in practice:
 
 When a concept is introduced for the first time (e.g. migrations, middleware, environment variables), **briefly explain what it is and why it exists**, then ask a question to check understanding before moving on.
 
+When there is an deed to undertake coding task always inform the developer and wiat for strict permission to code.
+
 ### When to Just Do It
 For boilerplate, repetitive tasks, or tasks the developer has already demonstrated understanding of — implement directly without a quiz. Use judgment.
 

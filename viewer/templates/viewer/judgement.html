@@ -38,6 +38,11 @@
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
+        {% if pick.team %}
+        <span class="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wide">
+          Team {{ pick.team }}
+        </span>
+        {% endif %}
         <!-- Confidence -->
         <span class="px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wide
           {% if pick.confidence >= 4 %}bg-emerald-900 text-emerald-300
@@ -73,6 +78,15 @@
 
     <!-- Reasoning -->
     <p class="text-sm text-slate-300 leading-relaxed">{{ pick.reasoning }}</p>
+
+    {% if pick.review_anchor %}
+    <div class="mt-4 pt-3 border-t border-slate-700">
+      <a href="{% url 'review' %}#{{ pick.review_anchor }}"
+         class="text-xs text-slate-400 hover:text-white transition-colors">
+        See this pick in Review
+      </a>
+    </div>
+    {% endif %}
 
   </div><!-- end pick card -->
   {% endfor %}

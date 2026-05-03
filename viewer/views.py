@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -10,6 +11,20 @@ from django.views.decorators.http import require_http_methods
 from .utils import delete_files_by_type, detect_file_type, get_latest_judgement, get_latest_reports, get_latest_review
 
 
+def _normalize_token(value: str) -> str:
+    """Create a lowercase slug token used for stable UI IDs and matching."""
+    cleaned = re.sub(r'[^a-z0-9]+', '-', (value or '').strip().lower())
+    return cleaned.strip('-')
+
+
+def _team_from_report_name(report_name: str) -> str:
+    """Extract and normalize team name from report filenames when team is missing."""
+    stem = os.path.splitext(os.path.basename(report_name or ''))[0]
+    if '_report_' not in stem:
+        return ''
+    return _normalize_token(stem.split('_report_', 1)[1])
+
+
 def index(request):
     """Redirect root URL to the report page."""
     return redirect('report')
@@ -17,22 +32,80 @@ def index(request):
 
 def report(request):
     """Report page — renders AI trade reports."""
+    reports = get_latest_reports()
+    teams = list(dict.fromkeys(
+        report.get('team', '')
+        for report in reports
+        if report.get('team')
+    ))
+
     return render(request, 'viewer/report.html', {
-        'reports': get_latest_reports(),
+        'reports': reports,
+        'teams': teams,
     })
 
 
 def review(request):
     """Review page — renders peer review of AI picks."""
+    review_data = get_latest_review()
+    review_picks = []
+    review_teams = []
+    seen_teams = set()
+
+    for team_block in (review_data or {}).get('teams', []):
+        team_label = team_block.get('team', '')
+        team_slug = _normalize_token(team_label)
+        if not team_slug:
+            continue
+
+        if team_slug not in seen_teams:
+            review_teams.append({'slug': team_slug, 'label': team_label})
+            seen_teams.add(team_slug)
+
+        for pick in team_block.get('team_review', []):
+            ticker = str(pick.get('ticker', '')).strip()
+            ticker_slug = _normalize_token(ticker)
+            anchor_id = f'pick-{team_slug}-{ticker_slug}' if ticker_slug else ''
+            review_picks.append({
+                'team': team_slug,
+                'team_label': team_label,
+                'ticker': ticker,
+                'name': pick.get('stock_name', ''),
+                'side': str(pick.get('side', '')).lower(),
+                'note': pick.get('note', 0),
+                'valid': bool(pick.get('still_valid', False)),
+                'reasoning': pick.get('reasoning', ''),
+                'anchor_id': anchor_id,
+            })
+
     return render(request, 'viewer/review.html', {
-        'review': get_latest_review(),
+        'review': review_data,
+        'review_picks': review_picks,
+        'review_teams': review_teams,
     })
 
 
 def judgement(request):
     """Judgement page — renders final curated picks."""
+    judgement_data = get_latest_judgement()
+    if judgement_data:
+        normalized_picks = []
+        for pick in judgement_data.get('picks', []):
+            item = dict(pick)
+            team_slug = _normalize_token(item.get('team', '')) or _team_from_report_name(item.get('report_name', ''))
+            ticker_slug = _normalize_token(str(item.get('ticker', '')))
+            item['team'] = team_slug
+            if team_slug and ticker_slug:
+                item['review_anchor'] = f'pick-{team_slug}-{ticker_slug}'
+            elif ticker_slug:
+                item['review_anchor'] = f'ticker-{ticker_slug}'
+            else:
+                item['review_anchor'] = ''
+            normalized_picks.append(item)
+        judgement_data['picks'] = normalized_picks
+
     return render(request, 'viewer/judgement.html', {
-        'judgement': get_latest_judgement(),
+        'judgement': judgement_data,
     })
 
 

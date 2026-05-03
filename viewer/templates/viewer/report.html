@@ -1,4 +1,5 @@
 {% extends "viewer/base.html" %}
+{% load viewer_extras %}
 {% block title %}Report — Damian's Trade Ideas{% endblock %}
 
 {% block content %}
@@ -18,15 +19,94 @@
 </div>
 
 {% else %}
+<div x-data="reportFilter({{ teams|tojson }})">
+
+  <section class="mb-6 rounded-xl border border-slate-700 bg-slate-900 p-4 md:p-5 space-y-4">
+    <div class="flex flex-wrap items-end gap-4 justify-between">
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Filters</h2>
+        <p class="text-xs text-slate-500 mt-1">Select filters, then click Apply.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button @click="apply()"
+                class="px-3 py-1.5 rounded-md bg-slate-700 text-slate-100 text-sm font-medium hover:bg-slate-600 transition-colors">
+          Apply filters
+        </button>
+        <button x-show="hasActiveFilter"
+                x-cloak
+                @click="reset()"
+                class="px-3 py-1.5 rounded-md border border-slate-600 text-slate-300 text-sm hover:text-white hover:border-slate-500 transition-colors">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-3">
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Teams</p>
+        <div class="flex flex-wrap gap-2">
+          <template x-for="team in allTeams" :key="`team-${team}`">
+            <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+              <input type="checkbox"
+                     class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                     :checked="pendingTeams.includes(team)"
+                     @change="togglePendingTeam(team)">
+              <span x-text="team"></span>
+            </label>
+          </template>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Direction</p>
+        <div class="flex flex-wrap gap-2">
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   :checked="pendingSides.includes('long')"
+                   @change="togglePendingSide('long')">
+            <span>Long</span>
+          </label>
+          <label class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800/70 text-slate-300 text-xs">
+            <input type="checkbox"
+                   class="h-3.5 w-3.5 rounded border-slate-500 bg-slate-900 text-slate-300"
+                   :checked="pendingSides.includes('short')"
+                   @change="togglePendingSide('short')">
+            <span>Short</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label for="report-query" class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ticker or Name</label>
+        <input id="report-query"
+               type="text"
+               x-model="pendingQuery"
+               placeholder="Search picks"
+               class="mt-2 w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-600">
+      </div>
+    </div>
+  </section>
 
 {% for report in reports %}
-<section class="mb-10" x-data="{ overviewOpen: false }">
+<section class="mb-10"
+         x-data="{ teamOpen: false, overviewOpen: false }"
+         x-show="activeTeams.includes('{{ report.team|escapejs }}') && hasVisiblePick('{{ report.team|escapejs }}', {{ report.picks|picksmeta|tojson }})"
+         x-cloak>
 
-  <!-- Team heading -->
-  <div class="flex items-center gap-3 mb-4">
-    <h2 class="text-lg font-semibold text-white">{{ report.team }}</h2>
-    <span class="text-slate-500 text-xs">{{ report.date }}</span>
-  </div>
+  <button @click="teamOpen = !teamOpen"
+          class="w-full flex items-center justify-between gap-3 mb-4 text-left rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 hover:border-slate-600 transition-colors">
+    <span class="flex items-center gap-3">
+      <span class="text-lg font-semibold text-white">{{ report.team }}</span>
+      <span class="text-slate-500 text-xs">{{ report.date }}</span>
+    </span>
+    <svg class="w-4 h-4 text-slate-500 transition-transform" :class="teamOpen ? 'rotate-180' : ''"
+         fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </button>
+
+  <div x-show="teamOpen" x-cloak>
 
   <!-- Market overview collapsible -->
   {% if report.market_overview %}
@@ -48,7 +128,10 @@
   <!-- Pick cards -->
   <div class="grid gap-4">
     {% for pick in report.picks %}
-    <div class="rounded-xl border border-slate-700 bg-slate-900 p-5" x-data="{ open: false }">
+    <div class="rounded-xl border border-slate-700 bg-slate-900 p-5"
+         x-data="{ open: false }"
+         x-show="isPickVisible('{{ report.team|escapejs }}', '{{ pick.side|escapejs }}', '{{ pick.ticker|escapejs }}', {{ pick.name|tojson }})"
+         x-cloak>
 
       <!-- Card header row -->
       <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -134,7 +217,11 @@
     {% endfor %}
   </div><!-- end grid -->
 
+  </div>
+
 </section>
 {% endfor %}
+
+</div>
 {% endif %}
 {% endblock %}
